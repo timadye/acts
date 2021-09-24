@@ -121,7 +121,7 @@ def process (f):
 
     if   oo == "geo-tgeo-layers":
       oo = "geo-tgeo-volume-layers"
-      vv = bool(vv)
+      vv = bool(int(vv))
 
     elif oo == "geo-tgeo-volume-name":
       oo = "geo-tgeo-subvolume-names"

@@ -1,22 +1,29 @@
 #!/usr/bin/env python
+# tgeo-response2json.py - convert TGeo response file options to ACTS v13.0.0 JSON format
+
 
 from __future__ import print_function
 
 import sys, os, re, getopt, json, subprocess
 from collections import OrderedDict
 
-prog = os.path.basename(sys.argv[0])
-
-def shorthelp():
-  print ("Use '"+prog+" -h' for help.")
-  return 1
-
-
 def usage():
   print (prog,"""- convert TGeo response file options to ACTS v13.0.0 JSON format
 
 USAGE:
-  """+prog+""" tgeo.response
+  """+prog+""" [OPTIONS] tgeo.response
+
+ACTS v13.0.0 (PR #884) changed the way the TGeo detector configuration is specified.
+A JSON file is now used, instead of the previous method using Boost options,
+which were often collected together in a response file (--response-file).
+This script converts an old response file to the new JSON file.
+
+To include all the required settings, this script needs to know the defaults for
+any options not specified in the response file. These defaults can be obtained
+by running a TGeo example with the --geo-tgeo-dump-jsonconfig=def.json option.
+This script includes a hardcoded copy of these defaults (produced with ACTS v13.0.0).
+These are used by default, but the latest defaults can be regenerated and used by
+specifying the -d (or -c) option.
 
 The JSON file is written to stdout.
 
@@ -28,10 +35,11 @@ OPTIONS:
   -f JSON read list of default options from JSON file
   -n      don't add any defaults
 
-If none of -d -c -f is specified, then use hardcoded default options.
+If none of -dcfn options is specified, then use hardcoded default options.
 
 AUTHOR: Tim Adye <tim.adye@cern.ch>""")
 
+prog = os.path.basename(sys.argv[0])
 
 def main():
   args = getopts()
@@ -49,7 +57,6 @@ def getopts():
     optlist, args = getopt.getopt (sys.argv[1:], 'hvdc:f:n')
   except getopt.GetoptError as e:
     print (prog+":",e, file=sys.stderr)
-    shorthelp()
     exit(1)
   opt= dict(optlist)
   if "-h" in opt or len(sys.argv)<=1:

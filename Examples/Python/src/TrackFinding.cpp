@@ -221,7 +221,8 @@ void addTrackFinding(Context& ctx) {
 
     py::class_<MeasurementSelectorCuts>(m, "MeasurementSelectorCuts")
         .def(py::init<>())
-        .def(py::init<double, size_t>())
+        .def(py::init<std::vector<double>, std::vector<double>,
+                      std::vector<int>>())
         .def_readwrite("etaBins", &MeasurementSelectorCuts::etaBins)
         .def_readwrite("chi2CutOff", &MeasurementSelectorCuts::chi2CutOff)
         .def_readwrite("numMeasurementsCutOff",

@@ -29,7 +29,8 @@ struct MeasurementSelectorCuts {
   /// bins in |eta| to specify variable selections
   std::vector<double> etaBins;
   /// Maximum local chi2 contribution.
-  std::vector<double> chi2CutOff = std::vector<double>{std::numeric_limits<double>::max()};
+  std::vector<double> chi2CutOff =
+      std::vector<double>{std::numeric_limits<double>::max()};
   /// Maximum number of associated measurements on a single surface.
   std::vector<int> numMeasurementsCutOff = std::vector<int>{1};
 };
@@ -129,7 +130,8 @@ class MeasurementSelector {
                  res)
                     .eval()(0, 0);
 
-            const auto chi2Cut = VariableCut(predictedParams, cuts, chi2CutOff, logger);
+            const auto chi2Cut =
+                VariableCut(predictedParams, cuts, chi2CutOff, logger);
             ACTS_VERBOSE("Chi2: " << chi2 << ", max: " << chi2Cut);
             // Push the measurement index and chi2 if satisfying the criteria
             if (chi2 < chi2Cut) {
@@ -148,9 +150,9 @@ class MeasurementSelector {
 
     // Get the number of measurement candidates with provided constraint
     // considered
-    const size_t numMeasurementsCut = VariableCut(predictedParams, cuts, numMeasurementsCutOff, logger);
-    size_t nFinalCandidates =
-        std::min(nInitialCandidates, numMeasurementsCut);
+    const size_t numMeasurementsCut =
+        VariableCut(predictedParams, cuts, numMeasurementsCutOff, logger);
+    size_t nFinalCandidates = std::min(nInitialCandidates, numMeasurementsCut);
 
     // If there is no selected measurement, return the measurement with the best
     // chi2 and tag it as an outlier
@@ -162,7 +164,8 @@ class MeasurementSelector {
       return Result<void>::success();
     }
 
-    ACTS_VERBOSE("Number of measurement candidates: " << nInitialCandidates << ", max: " << numMeasurementsCut);
+    ACTS_VERBOSE("Number of measurement candidates: "
+                 << nInitialCandidates << ", max: " << numMeasurementsCut);
     measCandidateIndices.resize(nFinalCandidates);
     // Sort the initial measurement candidates based on chi2 in ascending order
     std::sort(measChi2.begin(), measChi2.begin() + nInitialCandidates,
@@ -186,20 +189,23 @@ class MeasurementSelector {
 
  private:
   template <typename CutType>
-  static CutType VariableCut (const BoundTrackParameters& predictedParams,
-                              const Acts::MeasurementSelector::Config::Iterator selector,
-                              const std::vector<CutType>& cuts,
-                              LoggerWrapper logger) {
+  static CutType VariableCut(
+      const BoundTrackParameters& predictedParams,
+      const Acts::MeasurementSelector::Config::Iterator selector,
+      const std::vector<CutType>& cuts, LoggerWrapper logger) {
     const auto& etaBins = selector->etaBins;
-    if (etaBins.empty()) return cuts[0];   // shortcut if no etaBins
+    if (etaBins.empty())
+      return cuts[0];  // shortcut if no etaBins
     const auto eta = Acts::VectorHelpers::eta(predictedParams.unitDirection());
     const auto abseta = std::abs(eta);
     size_t bin = 0;
     for (auto etaBin : etaBins) {
-      if (etaBin >= abseta) break;
+      if (etaBin >= abseta)
+        break;
       bin++;
     }
-    if (bin >= cuts.size()) bin = cuts.size()-1;
+    if (bin >= cuts.size())
+      bin = cuts.size() - 1;
     ACTS_VERBOSE("Variable cut for eta=" << eta << ": " << cuts[bin]);
     return cuts[bin];
   }

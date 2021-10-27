@@ -38,9 +38,13 @@ void ActsExamples::Options::addTrackFindingOptions(
 ActsExamples::TrackFindingAlgorithm::Config
 ActsExamples::Options::readTrackFindingConfig(
     const ActsExamples::Options::Variables& variables) {
-  auto etaBins = variables["ckf-selection-abseta-bins"].template as<VariableReals>().values;
-  auto chi2Max = variables["ckf-selection-chi2max"].template as<VariableReals>().values;
-  auto nMax = variables["ckf-selection-nmax"].template as<VariableIntegers>().values;
+  auto etaBins = variables["ckf-selection-abseta-bins"]
+                     .template as<VariableReals>()
+                     .values;
+  auto chi2Max =
+      variables["ckf-selection-chi2max"].template as<VariableReals>().values;
+  auto nMax =
+      variables["ckf-selection-nmax"].template as<VariableIntegers>().values;
 
   // config is a GeometryHierarchyMap with just the global default
   TrackFindingAlgorithm::Config cfg;

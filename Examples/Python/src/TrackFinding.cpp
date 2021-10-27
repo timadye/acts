@@ -205,7 +205,9 @@ void addTrackFinding(Context& ctx) {
 
   {
     auto constructor =
-        [](std::vector<std::pair<GeometryIdentifier, std::pair<std::vector<double>, std::vector<int>>>>
+        [](std::vector<
+            std::pair<GeometryIdentifier,
+                      std::pair<std::vector<double>, std::vector<int>>>>
                input) {
           std::vector<std::pair<GeometryIdentifier, MeasurementSelectorCuts>>
               converted;

@@ -29,10 +29,9 @@ struct MeasurementSelectorCuts {
   /// bins in |eta| to specify variable selections
   std::vector<double> etaBins;
   /// Maximum local chi2 contribution.
-  std::vector<double> chi2CutOff =
-      std::vector<double>{std::numeric_limits<double>::max()};
+  std::vector<double> chi2CutOff{std::numeric_limits<double>::max()};
   /// Maximum number of associated measurements on a single surface.
-  std::vector<int> numMeasurementsCutOff = std::vector<int>{1};
+  std::vector<int> numMeasurementsCutOff{1};
 };
 
 /// @brief Measurement selection struct selecting those measurements compatible

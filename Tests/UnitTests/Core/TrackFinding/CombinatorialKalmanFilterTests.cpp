@@ -133,7 +133,8 @@ struct Fixture {
   // configuration for the measurement selector
   Acts::MeasurementSelector::Config measurementSelectorCfg = {
       // global default: no chi2 cut, only one measurement per surface
-      {Acts::GeometryIdentifier(), {{}, {std::numeric_limits<double>::max()}, {1}}},
+      {Acts::GeometryIdentifier(),
+       {{}, {std::numeric_limits<double>::max()}, {1}}},
   };
 
   std::unique_ptr<const Acts::Logger> logger;

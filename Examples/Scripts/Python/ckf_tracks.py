@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from typing import Optional
+import argparse
 
 from acts.examples import Sequencer, GenericDetector, RootParticleReader
 
@@ -20,9 +21,13 @@ def runCKFTracks(
     truthEstimatedSeeded=False,
     outputCsv=True,
     inputParticlePath: Optional[Path] = None,
+    numParticles=4,
+    atlasDetector=False,
     s=None,
 ):
-    s = s or Sequencer(events=100, numThreads=-1)
+    outputDir.mkdir(exist_ok=True)
+
+    s = s or Sequencer(events=100, numThreads=-1, outputDir=str(outputDir))
 
     logger = acts.logging.getLogger("CKFExample")
 
@@ -33,6 +38,23 @@ def runCKFTracks(
 
     if inputParticlePath is None:
         logger.info("Generating particles using particle gun")
+        if atlasDetector:
+            particles = acts.examples.ParametricParticleGenerator(
+                p=(0.4 * u.GeV, 50 * u.GeV),
+                pTransverse=True,
+                eta=(-4, 4),
+                phi=(0, 360 * u.degree),
+                randomizeCharge=True,
+                numParticles=numParticles,
+            )
+        else:
+            particles = acts.examples.ParametricParticleGenerator(
+                p=(1 * u.GeV, 10 * u.GeV),
+                eta=(-2, 2),
+                phi=(0, 360 * u.degree),
+                randomizeCharge=True,
+                numParticles=numParticles,
+            )
 
         evGen = acts.examples.EventGenerator(
             level=acts.logging.INFO,
@@ -42,13 +64,7 @@ def runCKFTracks(
                     vertex=acts.examples.GaussianVertexGenerator(
                         stddev=acts.Vector4(0, 0, 0, 0), mean=acts.Vector4(0, 0, 0, 0)
                     ),
-                    particles=acts.examples.ParametricParticleGenerator(
-                        p=(1 * u.GeV, 10 * u.GeV),
-                        eta=(-2, 2),
-                        phi=(0, 360 * u.degree),
-                        randomizeCharge=True,
-                        numParticles=4,
-                    ),
+                    particles=particles,
                 )
             ],
             outputParticles="particles_input",
@@ -330,27 +346,126 @@ def runCKFTracks(
 
 
 if "__main__" == __name__:
-    srcdir = Path(__file__).resolve().parent.parent.parent.parent
+    p = argparse.ArgumentParser(description="Example script to run CKF tracking")
+    p.add_argument(
+        "-n", "--events", type=int, default=100, help="The number of events to process."
+    )
+    p.add_argument(
+        "--gen-nparticles",
+        type=int,
+        default=4,
+        help="Number of generated particles per event.",
+    )
+    p.add_argument(
+        "--generic-detector",
+        action="store_true",
+        help="Setup Generic Detector (default).",
+    )
+    p.add_argument(
+        "-a",
+        "--atlas",
+        action="store_true",
+        help="Setup ATLAS Detector using the ITk standalone geometry specified in --geo-dir. Get in touch if you don't have this.",
+    )
+    p.add_argument(
+        "-g",
+        "--geo-dir",
+        help="Input directory containing geometry.",
+    )
+    p.add_argument("-i", "--input-particles", type=Path, help="Input particles path.")
+    p.add_argument(
+        "-o",
+        "--output-dir",
+        default=Path.cwd(),
+        type=Path,
+        help="Directory to write outputs to.",
+    )
+    p.add_argument(
+        "--bf-constant-tesla",
+        type=float,
+        default=2,
+        help="Set a constant magnetic field vector in Tesla.",
+    )
+    p.add_argument(
+        "--output-csv", action="store_true", help="output trajectories to CSV files"
+    )
+    p.add_argument(
+        "--no-material", action="store_true", help="Decorate material to the geometry"
+    )
+    p.add_argument(
+        "--ckf-truth-smeared-seeds",
+        action="store_true",
+        help="Use track parameters smeared from truth particles for steering CKF",
+    )
+    p.add_argument(
+        "--ckf-truth-estimated-seeds",
+        action="store_true",
+        help="Use track parameters estimated from truth tracks for steering CKF",
+    )
+    p.add_argument(
+        "--geo-selection-config-file",
+        type=Path,
+        help="Json file for space point geometry selection",
+    )
+    p.add_argument(
+        "--digi-config-file",
+        type=Path,
+        help="Configuration (.json) file for digitization description",
+    )
 
-    detector, trackingGeometry, decorators = GenericDetector.create()
+    args = p.parse_args()
 
-    field = acts.ConstantBField(acts.Vector3(0, 0, 2 * u.T))
+    if not args.atlas:
+        args.generic_detector = True
 
-    inputParticlePath = Path("particles.root")
-    if not inputParticlePath.exists():
-        inputParticlePath = None
+    if args.generic_detector:
+        if args.geo_dir is None:
+            args.geo_dir = Path(__file__).resolve().parent.parent.parent.parent
+        if args.geo_selection_config_file is None:
+            args.geo_selection_config_file = (
+                args.geo_dir
+                / "Examples/Algorithms/TrackFinding/share/geoSelection-genericDetector.json"
+            )
+        if args.digi_config_file is None:
+            args.digi_config_file = (
+                args.geo_dir
+                / "Examples/Algorithms/Digitization/share/default-smearing-config-generic.json"
+            )
+        detector, trackingGeometry, decorators = GenericDetector.create()
+
+    if args.atlas:
+        from itk import buildITkGeometry
+
+        if args.geo_dir is None:
+            args.geo_dir = Path("acts-detector-examples")
+        if args.geo_selection_config_file is None:
+            args.geo_selection_config_file = (
+                args.geo_dir / "atlas/itk-hgtd/geoSelection-ITk.json"
+            )
+        if args.digi_config_file is None:
+            args.digi_config_file = (
+                args.geo_dir / "atlas/itk-hgtd/itk-smearing-config.json"
+            )
+        detector, trackingGeometry, decorators = buildITkGeometry(
+            args.geo_dir, material=not args.no_material
+        )
+
+    field = acts.ConstantBField(acts.Vector3(0, 0, args.bf_constant_tesla * u.T))
+
+    s = Sequencer(events=args.events, numThreads=-1, outputDir=str(args.output_dir))
 
     runCKFTracks(
         trackingGeometry,
         decorators,
         field=field,
-        geometrySelection=srcdir
-        / "Examples/Algorithms/TrackFinding/share/geoSelection-genericDetector.json",
-        digiConfigFile=srcdir
-        / "Examples/Algorithms/Digitization/share/default-smearing-config-generic.json",
-        outputCsv=True,
-        truthSmearedSeeded=False,
-        truthEstimatedSeeded=False,
-        inputParticlePath=inputParticlePath,
-        outputDir=Path.cwd(),
+        geometrySelection=args.geo_selection_config_file,
+        digiConfigFile=args.digi_config_file,
+        outputCsv=args.output_csv,
+        truthSmearedSeeded=args.ckf_truth_smeared_seeds,
+        truthEstimatedSeeded=args.ckf_truth_estimated_seeds,
+        inputParticlePath=args.input_particles,
+        outputDir=args.output_dir,
+        numParticles=args.gen_nparticles,
+        atlasDetector=args.atlas,
+        s=s,
     ).run()

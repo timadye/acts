@@ -349,7 +349,8 @@ void readTGeoLayerBuilderConfigsFile(const std::string& path,
   }
 }
 
-/// Read the TGeo layer builder configurations from the user configuration.
+/// Read the TGeo layer builder configurations from the user configuration
+/// specified with --geo-tgeo-jsonconfig.
 void readTGeoLayerBuilderConfigs(const Variables& vm,
                                  TGeoDetector::Config& config) {
   const auto path = vm["geo-tgeo-jsonconfig"].template as<std::string>();
@@ -487,11 +488,9 @@ auto TGeoDetector::finalize(
     const Config& cfg,
     std::shared_ptr<const Acts::IMaterialDecorator> mdecorator)
     -> std::pair<TrackingGeometryPtr, ContextDecorators> {
-  Config config = cfg;
-  config.readJson(cfg.jsonFile);
   Acts::GeometryContext tGeoContext;
   TrackingGeometryPtr tgeoTrackingGeometry =
-      buildTGeoDetector(config, tGeoContext, detectorStore, mdecorator);
+      buildTGeoDetector(cfg, tGeoContext, detectorStore, mdecorator);
 
   ContextDecorators tgeoContextDeocrators = {};
   // Return the pair of geometry and empty decorators
@@ -499,8 +498,8 @@ auto TGeoDetector::finalize(
       std::move(tgeoTrackingGeometry), std::move(tgeoContextDeocrators));
 }
 
-void TGeoDetector::Config::readJson(const std::string& file) {
-  readTGeoLayerBuilderConfigsFile(file, *this);
+void TGeoDetector::Config::readJson(const std::string& jsonFile) {
+  readTGeoLayerBuilderConfigsFile(jsonFile, *this);
 }
 
 }  // namespace ActsExamples

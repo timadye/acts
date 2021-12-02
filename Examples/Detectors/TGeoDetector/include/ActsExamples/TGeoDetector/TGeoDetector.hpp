@@ -39,7 +39,6 @@ struct TGeoDetector : public ActsExamples::IBaseDetector {
     void readJson(const std::string& fileName);
 
     std::string fileName;
-    std::string jsonFile;
     bool buildBeamPipe = false;
     double beamPipeRadius{0};
     double beamPipeHalflengthZ{0};

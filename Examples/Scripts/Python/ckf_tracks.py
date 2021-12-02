@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 import argparse
 
-from acts.examples import Sequencer, GenericDetector, RootParticleReader
+from acts.examples import Sequencer, GenericDetector, RootParticleReader, TGeoDetector
 
 import acts
 
@@ -364,6 +364,37 @@ def runCKFTracks(
     return s
 
 
+def getITkGeometry(
+    geo_dir: Path,
+    mat_input_file: Optional[Path],
+    geo_tgeo_jsonconfig: Path,
+    geo_tgeo_filename: Path,
+    loglevel=acts.logging.INFO,
+):
+    Volume = TGeoDetector.Config.Volume
+    LayerTriplet = TGeoDetector.Config.LayerTriplet
+
+    logger = acts.logging.getLogger("getITkGeometry")
+    logger.setLevel(loglevel)
+
+    matDeco = None
+    if mat_input_file is not None:
+        logger.info("Adding material from %s", mat_input_file.absolute())
+        matDeco = acts.IMaterialDecorator.fromFile(
+            mat_input_file,
+            level=acts.logging.INFO,
+        )
+
+    return TGeoDetector.create(
+        jsonFile=str(geo_tgeo_jsonconfig),
+        fileName=str(geo_tgeo_filename),
+        surfaceLogLevel=loglevel,
+        layerLogLevel=loglevel,
+        volumeLogLevel=loglevel,
+        mdecorator=matDeco,
+    )
+
+
 if "__main__" == __name__:
     p = argparse.ArgumentParser(
         description="Example script to run CKF tracking",
@@ -428,7 +459,14 @@ if "__main__" == __name__:
         help="output trajectories to CSV files",
     )
     p.add_argument(
-        "--no-material", action="store_true", help="Decorate material to the geometry"
+        "--no-material",
+        action="store_true",
+        help="Decorate material to the geometry (--atlas or --build-itk-geometry only)",
+    )
+    p.add_argument(
+        "--mat-input-file",
+        type=Path,
+        help="Name of the material map input file, supported: '.json', '.cbor' or '.root'.",
     )
     p.add_argument(
         "--ckf-truth-smeared-seeds",
@@ -444,6 +482,21 @@ if "__main__" == __name__:
         "--geo-selection-config-file",
         type=Path,
         help="Json file for space point geometry selection",
+    )
+    p.add_argument(
+        "--build-itk-geometry",
+        action="store_true",
+        help="use itk.buildITkGeometry to create TGeo geometry (skips --geo-tgeo-*, defaults --mat-input-file)",
+    )
+    p.add_argument(
+        "--geo-tgeo-jsonconfig",
+        type=Path,
+        help="TGeo Json config file name (--atlas only).",
+    )
+    p.add_argument(
+        "--geo-tgeo-filename",
+        type=Path,
+        help="TGeo Root file name (--atlas only).",
     )
     p.add_argument(
         "--digi-config-file",
@@ -469,13 +522,13 @@ if "__main__" == __name__:
                 args.geo_dir
                 / "Examples/Algorithms/Digitization/share/default-smearing-config-generic.json"
             )
-        detector, trackingGeometry, decorators = GenericDetector.create()
+        if not args.build_itk_geometry:
+            detector, trackingGeometry, decorators = GenericDetector.create()
 
     if args.atlas:
-        from itk import buildITkGeometry
-
         if args.geo_dir is None:
             args.geo_dir = Path("acts-detector-examples")
+
         if not args.ckf_truth_smeared_seeds and args.geo_selection_config_file is None:
             args.geo_selection_config_file = (
                 args.geo_dir / "atlas/itk-hgtd/geoSelection-ITk.json"
@@ -484,6 +537,31 @@ if "__main__" == __name__:
             args.digi_config_file = (
                 args.geo_dir / "atlas/itk-hgtd/itk-smearing-config.json"
             )
+
+        if not args.build_itk_geometry:
+            if not args.no_material and args.mat_input_file is None:
+                args.mat_input_file = (
+                    args.geo_dir / "atlas/itk-hgtd/material-maps-ITk-HGTD.json"
+                )
+            if args.geo_tgeo_jsonconfig is None:
+                args.geo_tgeo_jsonconfig = (
+                    args.geo_dir / "atlas/itk-hgtd/tgeo-atlas-itk-hgtd.json"
+                )
+            if args.geo_tgeo_filename is None:
+                args.geo_tgeo_filename = (
+                    args.geo_dir / "atlas/itk-hgtd/ATLAS-ITk-HGTD.tgeo.root"
+                )
+            detector, trackingGeometry, decorators = getITkGeometry(
+                args.geo_dir,
+                mat_input_file=args.mat_input_file,
+                geo_tgeo_jsonconfig=args.geo_tgeo_jsonconfig,
+                geo_tgeo_filename=args.geo_tgeo_filename,
+                loglevel=acts.logging.Level(args.loglevel),
+            )
+
+    if args.build_itk_geometry:
+        from itk import buildITkGeometry
+
         detector, trackingGeometry, decorators = buildITkGeometry(
             args.geo_dir, material=not args.no_material
         )

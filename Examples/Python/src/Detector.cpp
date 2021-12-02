@@ -107,6 +107,9 @@ void addDetector(Context& ctx) {
         .def_readwrite("upper", &Options::Interval::upper);
 
     auto c = py::class_<Config>(d, "Config").def(py::init<>());
+    // c.def_property(
+    //    "jsonFile", nullptr,
+    //    [](Config& cfg, const std::string& file) { cfg.readJson(file); });
 
     py::enum_<Config::SubVolume>(c, "SubVolume")
         .value("Negative", Config::SubVolume::Negative)
@@ -155,6 +158,7 @@ void addDetector(Context& ctx) {
     regTriplet("LayerTripletDouble", double{5.5});
 
     ACTS_PYTHON_STRUCT_BEGIN(c, Config);
+    ACTS_PYTHON_MEMBER(jsonFile);
     ACTS_PYTHON_MEMBER(surfaceLogLevel);
     ACTS_PYTHON_MEMBER(layerLogLevel);
     ACTS_PYTHON_MEMBER(volumeLogLevel);

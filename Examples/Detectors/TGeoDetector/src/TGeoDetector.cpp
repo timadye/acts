@@ -322,13 +322,12 @@ std::shared_ptr<const Acts::TrackingGeometry> buildTGeoDetector(
 }
 
 /// Read the TGeo layer builder configurations from the user configuration.
-void readTGeoLayerBuilderConfigs(const Variables& vm,
-                                 TGeoDetector::Config& config) {
-  const auto path = vm["geo-tgeo-jsonconfig"].template as<std::string>();
-  nlohmann::json djson;
+void readTGeoLayerBuilderConfigsFile(const std::string& path,
+                                     TGeoDetector::Config& config) {
   if (path.empty()) {
     return;
   }
+  nlohmann::json djson;
   std::ifstream infile(path, std::ifstream::in | std::ifstream::binary);
   infile >> djson;
 
@@ -348,6 +347,13 @@ void readTGeoLayerBuilderConfigs(const Variables& vm,
     auto& vol = config.volumes.emplace_back();
     vol = volume;
   }
+}
+
+/// Read the TGeo layer builder configurations from the user configuration.
+void readTGeoLayerBuilderConfigs(const Variables& vm,
+                                 TGeoDetector::Config& config) {
+  const auto path = vm["geo-tgeo-jsonconfig"].template as<std::string>();
+  readTGeoLayerBuilderConfigsFile(path, config);
 }
 
 /// Dump TGeo Detector config to file.
@@ -481,14 +487,20 @@ auto TGeoDetector::finalize(
     const Config& cfg,
     std::shared_ptr<const Acts::IMaterialDecorator> mdecorator)
     -> std::pair<TrackingGeometryPtr, ContextDecorators> {
+  Config config = cfg;
+  config.readJson(cfg.jsonFile);
   Acts::GeometryContext tGeoContext;
   TrackingGeometryPtr tgeoTrackingGeometry =
-      buildTGeoDetector(cfg, tGeoContext, detectorStore, mdecorator);
+      buildTGeoDetector(config, tGeoContext, detectorStore, mdecorator);
 
   ContextDecorators tgeoContextDeocrators = {};
   // Return the pair of geometry and empty decorators
   return std::make_pair<TrackingGeometryPtr, ContextDecorators>(
       std::move(tgeoTrackingGeometry), std::move(tgeoContextDeocrators));
+}
+
+void TGeoDetector::Config::readJson(const std::string& file) {
+  readTGeoLayerBuilderConfigsFile(file, *this);
 }
 
 }  // namespace ActsExamples

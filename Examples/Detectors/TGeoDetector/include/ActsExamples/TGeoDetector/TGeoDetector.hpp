@@ -36,7 +36,10 @@ struct TGeoDetector : public ActsExamples::IBaseDetector {
     Acts::Logging::Level layerLogLevel = Acts::Logging::WARNING;
     Acts::Logging::Level volumeLogLevel = Acts::Logging::WARNING;
 
+    void readJson(const std::string& fileName);
+
     std::string fileName;
+    std::string jsonFile;
     bool buildBeamPipe = false;
     double beamPipeRadius{0};
     double beamPipeHalflengthZ{0};

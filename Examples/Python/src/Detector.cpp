@@ -109,11 +109,7 @@ void addDetector(Context& ctx) {
     auto c = py::class_<Config>(d, "Config").def(py::init<>());
 
     c.def_property(
-        "jsonFile",
-        [](const Config&) {  // Define dummy getter. If we used nullptr
-                             // hasattr() would fail.
-          return std::string{};
-        },
+        "jsonFile", nullptr,
         [](Config& cfg, const std::string& file) { cfg.readJson(file); });
 
     py::enum_<Config::SubVolume>(c, "SubVolume")

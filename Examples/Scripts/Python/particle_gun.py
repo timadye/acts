@@ -123,17 +123,14 @@ def addParticleGun(
     return s
 
 
-def runParticleGun(*args, **kwargs):
-    s = kwargs.pop("s", None) or Sequencer(
-        events=10, numThreads=-1, logLevel=acts.logging.INFO
+def runParticleGun(outputDir, s=None):
+    s = s or Sequencer(events=10, numThreads=-1)
+    s.config.logLevel = acts.logging.INFO
+    outputDir = Path(outputDir)
+    return addParticleGun(
+        s, outputDirCsv=outputDir / "csv", outputDirRoot=outputDir, printParticles=True
     )
-    kwargs.setdefault("printParticles", True)
-    return addParticleGun(s, *args, **kwargs)
 
 
 if "__main__" == __name__:
-
-    current_dir = Path(os.getcwd())
-    csv_dir = current_dir / "csv"
-    root_dir = current_dir / "root"
-    runParticleGun(csv_dir, root_dir).run()
+    runParticleGun(os.getcwd()).run()

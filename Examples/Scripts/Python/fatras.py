@@ -130,12 +130,15 @@ def addFatras(
 def runFatras(trackingGeometry, field, outputDir, s: acts.examples.Sequencer = None):
     from particle_gun import addParticleGun
 
-    s = s or acts.examples.Sequencer(
-        events=100, numThreads=-1, logLevel=acts.logging.INFO
-    )
+    s = s or acts.examples.Sequencer(events=100, numThreads=-1)
+    s.config.logLevel = acts.logging.INFO
     rnd = acts.examples.RandomNumbers()
     s = addParticleGun(
-        s, pConfig=(1 * u.GeV, 10 * u.GeV, False), etaConfig=(-2.0, 2.0, False), rnd=rnd
+        s,
+        pConfig=(1 * u.GeV, 10 * u.GeV, False),
+        etaConfig=(-2.0, 2.0, False),
+        particleConfig=(1, acts.PdgParticle.eMuon, False),
+        rnd=rnd,
     )
     outputDir = Path(outputDir)
     return addFatras(

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+from typing import Optional, Union
+from pathlib import Path
 
 import acts
 import acts.examples
@@ -9,11 +11,12 @@ u = acts.UnitConstants
 
 def addFatras(
     s: acts.examples.Sequencer,
-    trackingGeometry,
-    field,
-    outputDirCsv=None,
-    outputDirRoot=None,
-):
+    trackingGeometry: acts.TrackingGeometry,
+    field: acts.MagneticFieldProvider,
+    outputDirCsv: Optional[Union[Path, str]] = None,
+    outputDirRoot: Optional[Union[Path, str]] = None,
+    rnd: Optional[acts.examples.RandomNumbers] = None,
+) -> acts.examples.Sequencer:
     """This function steers the detector simulation using Fatras
 
     Parameters
@@ -22,14 +25,16 @@ def addFatras(
         the sequencer module to which we add the Fatras steps (returned from addFatras)
     trackingGeometry : tracking geometry
     field : magnetic field
-    outputDirCsv : str, path, None
+    outputDirCsv : Path|str, path, None
         the output folder for the Csv output, None triggers no output
-    outputDirRoot : str, path, None
+    outputDirRoot : Path|str, path, None
         the output folder for the Root output, None triggers no output
+    rnd : RandomNumbers, None
+        random number generator
     """
 
     # Preliminaries
-    rnd = acts.examples.RandomNumbers()
+    rnd = rnd or acts.examples.RandomNumbers()
 
     # Selector
     selector = acts.examples.ParticleSelector(
@@ -57,25 +62,27 @@ def addFatras(
 
     # Output
     if outputDirCsv is not None:
+        outputDirCsv = Path(outputDirCsv)
         if not os.path.exists(outputDirCsv):
             os.mkdir(outputDirCsv)
         s.addWriter(
             acts.examples.CsvParticleWriter(
                 level=s.config.logLevel,
-                outputDir=outputDirCsv,
+                outputDir=str(outputDirCsv),
                 inputParticles="particles_final",
                 outputStem="particles_final",
             )
         )
 
     if outputDirRoot is not None:
+        outputDirRoot = Path(outputDirRoot)
         if not os.path.exists(outputDirRoot):
             os.mkdir(outputDirRoot)
         s.addWriter(
             acts.examples.RootParticleWriter(
                 level=s.config.logLevel,
                 inputParticles="particles_final",
-                filePath=outputDirRoot + "/fatras_particles_final.root",
+                filePath=str(outputDirRoot / "fatras_particles_final.root"),
             )
         )
 
@@ -83,7 +90,7 @@ def addFatras(
         s.addWriter(
             acts.examples.CsvParticleWriter(
                 level=s.config.logLevel,
-                outputDir=outputDirCsv,
+                outputDir=str(outputDirCsv),
                 inputParticles="particles_initial",
                 outputStem="particles_initial",
             )
@@ -94,7 +101,7 @@ def addFatras(
             acts.examples.RootParticleWriter(
                 level=s.config.logLevel,
                 inputParticles="particles_initial",
-                filePath=outputDirRoot + "/fatras_particles_initial.root",
+                filePath=str(outputDirRoot / "fatras_particles_initial.root"),
             )
         )
 
@@ -103,7 +110,7 @@ def addFatras(
             acts.examples.CsvSimHitWriter(
                 level=s.config.logLevel,
                 inputSimHits=alg.config.outputSimHits,
-                outputDir=outputDirCsv,
+                outputDir=str(outputDirCsv),
                 outputStem="hits",
             )
         )
@@ -113,7 +120,7 @@ def addFatras(
             acts.examples.RootSimHitWriter(
                 level=s.config.logLevel,
                 inputSimHits=alg.config.outputSimHits,
-                filePath=outputDirRoot + "/hits.root",
+                filePath=str(outputDirRoot / "hits.root"),
             )
         )
 
@@ -126,15 +133,18 @@ def runFatras(trackingGeometry, field, outputDir, s: acts.examples.Sequencer = N
     s = s or acts.examples.Sequencer(
         events=100, numThreads=-1, logLevel=acts.logging.INFO
     )
+    rnd = acts.examples.RandomNumbers()
     s = addParticleGun(
-        s, pConfig=[1 * u.GeV, 10 * u.GeV, False], etaConfig=[-2.0, 2.0, False]
+        s, pConfig=(1 * u.GeV, 10 * u.GeV, False), etaConfig=(-2.0, 2.0, False), rnd=rnd
     )
+    outputDir = Path(outputDir)
     return addFatras(
         s,
         trackingGeometry,
         field,
-        outputDirCsv=outputDir + "/csv",
+        outputDirCsv=outputDir / "csv",
         outputDirRoot=outputDir,
+        rnd=rnd,
     )
 
 

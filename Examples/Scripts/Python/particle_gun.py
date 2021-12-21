@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+from typing import Optional, Union, Tuple
+from pathlib import Path
 
 from acts.examples import (
     Sequencer,
@@ -14,44 +16,46 @@ from acts.examples import (
 )
 
 import acts
-from acts import Vector4, UnitConstants as u
+from acts import Vector4, UnitConstants as u, PdgParticle
 
 
 def addParticleGun(
     s: Sequencer,
-    outputDirCsv=None,
-    outputDirRoot=None,
-    pConfig=[1 * u.GeV, 10 * u.GeV, True],
-    etaConfig=[-4.0, 4.0, True],
-    particleConfig=[10, acts.ActsPythonBindings.PdgParticle.eMuon, True],
-    vtxGen=None,
-    printParticles=False,
-    rndSeed=228,
-):
+    outputDirCsv: Optional[Union[Path, str]] = None,
+    outputDirRoot: Optional[Union[Path, str]] = None,
+    pConfig: Tuple[float, float, bool] = (1 * u.GeV, 10 * u.GeV, True),
+    etaConfig: Tuple[float, float, bool] = (-4.0, 4.0, True),
+    particleConfig: Tuple[int, PdgParticle, bool] = (10, PdgParticle.eMuon, True),
+    vtxGen: Optional[EventGenerator.VertexGenerator] = None,
+    printParticles: bool = False,
+    rnd: Optional[RandomNumbers] = None,
+) -> Sequencer:
     """This function steers the particle generation using the particle gun
 
     Parameters
     ----------
     s: Sequencer
         the sequencer module to which we add the particle gun steps (returned from addParticleGun)
-    outputDirCsv : str, path, None
+    outputDirCsv : Path|str, path, None
         the output folder for the Csv output, None triggers no output
-    outputDirRoot : str, path, None
+    outputDirRoot : Path|str, path, None
         the output folder for the Root output, None triggers no output
-    pConfig : list
+    pConfig : tuple|list
         momentum configuration: minimum momentum, maximum momentum, transverse
-    etaConfig : list
+    etaConfig : tuple|list
         pseudorapidity configuration: eta min, eta max, uniform
-    particleConfig: list
+    particleConfig: tuple|list
         partilce configuration: number of particles, particle type, charge flip
-    vtxGen : vertex generator, None
+    vtxGen : VertexGenerator, None
         vertex generator module
     printParticles : bool, False
         print generated particles
+    rnd : RandomNumbers, None
+        random number generator
     """
 
     # Preliminaries
-    rnd = RandomNumbers(seed=rndSeed)
+    rnd = rnd or RandomNumbers(seed=228)
 
     # Input
     if vtxGen is None:
@@ -90,6 +94,7 @@ def addParticleGun(
         )
 
     if outputDirCsv is not None:
+        outputDirCsv = Path(outputDirCsv)
         if not os.path.exists(outputDirCsv):
             os.mkdir(outputDirCsv)
 
@@ -97,22 +102,21 @@ def addParticleGun(
             CsvParticleWriter(
                 level=s.config.logLevel,
                 inputParticles=evGen.config.outputParticles,
-                outputDir=outputDirCsv,
+                outputDir=str(outputDirCsv),
                 outputStem="particles",
             )
         )
 
     if outputDirRoot is not None:
+        outputDirRoot = Path(outputDirRoot)
         if not os.path.exists(outputDirRoot):
             os.mkdir(outputDirRoot)
-
-        root_file = outputDirRoot + "/particles.root"
 
         s.addWriter(
             RootParticleWriter(
                 level=s.config.logLevel,
                 inputParticles=evGen.config.outputParticles,
-                filePath=root_file,
+                filePath=str(outputDirRoot / "particles.root"),
             )
         )
 
@@ -129,7 +133,7 @@ def runParticleGun(*args, **kwargs):
 
 if "__main__" == __name__:
 
-    current_dir = str(os.getcwd())
-    csv_dir = current_dir + "/csv"
-    root_dir = current_dir + "/root"
+    current_dir = Path(os.getcwd())
+    csv_dir = current_dir / "csv"
+    root_dir = current_dir / "root"
     runParticleGun(csv_dir, root_dir).run()

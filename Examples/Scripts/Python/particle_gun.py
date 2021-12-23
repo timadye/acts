@@ -128,7 +128,13 @@ def runParticleGun(outputDir, s=None):
     s.config.logLevel = acts.logging.INFO
     outputDir = Path(outputDir)
     return addParticleGun(
-        s, outputDirCsv=outputDir / "csv", outputDirRoot=outputDir, printParticles=True
+        s,
+        outputDirCsv=outputDir / "csv",
+        outputDirRoot=outputDir,
+        pConfig=(1 * u.GeV, 10 * u.GeV, False),
+        etaConfig=(-4.0, 4.0, False),
+        particleConfig=(2, acts.PdgParticle.eMuon, False),
+        printParticles=True,
     )
 
 

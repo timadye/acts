@@ -67,12 +67,16 @@ def addParticleGun(
         the output folder for the Root output, None triggers no output
     momentumConfig : MomentumConfig(min, max, transverse)
         momentum configuration: minimum momentum, maximum momentum, transverse
+        Defaults specified in Examples/Algorithms/Generators/ActsExamples/Generators/ParametricParticleGenerator.hpp
     etaConfig : EtaConfig(min, max, uniform)
         pseudorapidity configuration: eta min, eta max, uniform
+        Defaults specified in Examples/Algorithms/Generators/ActsExamples/Generators/ParametricParticleGenerator.hpp
     phiConfig : PhiConfig(min, max)
         azimuthal angle configuration: phi min, phi max
+        Defaults (all phi) specified in Examples/Algorithms/Generators/ActsExamples/Generators/ParametricParticleGenerator.hpp
     particleConfig : ParticleConfig(num, pdg, randomizeCharge)
         partilce configuration: number of particles, particle type, charge flip
+        Defaults specified in Examples/Algorithms/Generators/ActsExamples/Generators/ParametricParticleGenerator.hpp
     multiplicity : int, 1
         number of generated vertices
     vtxGen : VertexGenerator, None

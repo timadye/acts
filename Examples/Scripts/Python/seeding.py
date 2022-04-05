@@ -343,7 +343,7 @@ def runSeeding(trackingGeometry, field, outputDir, s=None):
     s = addParticleGun(
         s,
         EtaConfig(-2.0, 2.0),
-        ParticleConfig(4, acts.PdgParticle.eMuon, True),
+        ParticleConfig(num=4, pdg=acts.PdgParticle.eMuon, randomizeCharge=True),
         PhiConfig(0.0, 360.0 * u.degree),
         multiplicity=2,
         outputDirCsv=outputDir / "csv",

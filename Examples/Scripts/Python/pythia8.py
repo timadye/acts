@@ -14,11 +14,9 @@ def addPythia8(
     rnd: Optional[acts.examples.RandomNumbers] = None,
     nhard: int = 1,
     npileup: int = 200,
-    beam: Optional[
-        Union[acts.PdgParticle, Iterable]
-    ] = None,  # default: acts.PdgParticle.eProton
-    cmsEnergy: Optional[float] = None,  # default: 14 * acts.UnitConstants.TeV
-    hardProcess: Optional[Iterable] = None,  # default: ["HardQCD:all = on"]
+    beam: Optional[Union[acts.PdgParticle, Iterable]] = None,
+    cmsEnergy: Optional[float] = None,
+    hardProcess: Optional[Iterable] = None,
     pileupProcess: Iterable = ["SoftQCD:all = on"],
     vtxGen: Optional[acts.examples.EventGenerator.VertexGenerator] = None,
     outputDirCsv: Optional[Union[Path, str]] = None,
@@ -38,11 +36,16 @@ def addPythia8(
         random number generator
     nhard, npileup : int, 1, 200
         Number of hard-scatter and pileup vertices
-    beam : PdgParticle|[PdgParticle,PdgParticle], eProton
+    beam : PdgParticle|[PdgParticle,PdgParticle]
         beam particle(s)
-    cmsEnergy : float, 14 TeV
+        Defaults specified in Examples/Algorithms/GeneratorsPythia8/ActsExamples/Generators/Pythia8ProcessGenerator.hpp
+    cmsEnergy : float
         CMS energy
-    hardProcess, pileupProcess : [str], ["HardQCD:all = on"], ["SoftQCD:all = on"]
+        Defaults specified in Examples/Algorithms/GeneratorsPythia8/ActsExamples/Generators/Pythia8ProcessGenerator.hpp
+    hardProcess : [str]
+        hard and pileup processes
+        Defaults specified in Examples/Algorithms/GeneratorsPythia8/ActsExamples/Generators/Pythia8ProcessGenerator.hpp
+    pileupProcess : [str], ["SoftQCD:all = on"]
         hard and pileup processes
     vtxGen : VertexGenerator, None
         vertex generator module

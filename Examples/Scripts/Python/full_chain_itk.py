@@ -18,9 +18,9 @@ from ckf_tracks import addCKFTracks
 s = acts.examples.Sequencer(events=100, numThreads=-1)
 s = addParticleGun(
     s,
-    MomentumConfig(1.0 * u.GeV, 10.0 * u.GeV, True),
-    EtaConfig(-4.0, 4.0, True),
-    ParticleConfig(1, acts.PdgParticle.eMuon, True),
+    MomentumConfig(1.0 * u.GeV, 10.0 * u.GeV, transverse=True),
+    EtaConfig(-4.0, 4.0, uniform=True),
+    ParticleConfig(num=1, pdg=acts.PdgParticle.eMuon, randomizeCharge=True),
     rnd=rnd,
 )
 s = addFatras(

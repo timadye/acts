@@ -7,6 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "Acts/Plugins/Python/Utilities.hpp"
+#include "ActsExamples/Io/Csv/CsvBFieldWriter.hpp"
 #include "ActsExamples/Io/Csv/CsvMeasurementWriter.hpp"
 #include "ActsExamples/Io/Csv/CsvMultiTrajectoryWriter.hpp"
 #include "ActsExamples/Io/Csv/CsvParticleWriter.hpp"
@@ -600,6 +601,41 @@ void addOutput(Context& ctx) {
     ACTS_PYTHON_MEMBER(writeOptionalHistograms);
     ACTS_PYTHON_MEMBER(nSimulatedEvents);
     ACTS_PYTHON_STRUCT_END();
+  }
+
+#define REGISTER_CSV_BFIELD_WRITER_BINDING(suffix, coordinate, grid)      \
+  {                                                                       \
+    using Config = Writer::Config<                                        \
+        ActsExamples::CsvBFieldWriter::CoordinateType::coordinate, grid>; \
+    w.def_static(                                                         \
+        "run" suffix,                                                     \
+        [](const Config& config, Acts::Logging::Level level) {            \
+          Writer::run(config, level);                                     \
+        },                                                                \
+        py::arg("config"), py::arg("level"));                             \
+    auto c = py::class_<Config>(w, "Config" suffix).def(py::init<>());    \
+    ACTS_PYTHON_STRUCT_BEGIN(c, Config);                                  \
+    ACTS_PYTHON_MEMBER(fileName);                                         \
+    ACTS_PYTHON_MEMBER(bField);                                           \
+    ACTS_PYTHON_MEMBER(range);                                            \
+    ACTS_PYTHON_MEMBER(bins);                                             \
+    ACTS_PYTHON_STRUCT_END();                                             \
+  }                                                                       \
+  do {                                                                    \
+  } while (0)
+
+  {
+    using Writer = ActsExamples::CsvBFieldWriter;
+    auto w = py::class_<Writer>(mex, "CsvBFieldWriter");
+
+    py::enum_<Writer::CoordinateType>(w, "CoordinateType")
+        .value("rz", Writer::CoordinateType::RZ)
+        .value("xyz", Writer::CoordinateType::XYZ);
+
+    REGISTER_CSV_BFIELD_WRITER_BINDING("XyzGrid", XYZ, true);
+    REGISTER_CSV_BFIELD_WRITER_BINDING("XyzGridless", XYZ, false);
+    REGISTER_CSV_BFIELD_WRITER_BINDING("RzGrid", RZ, true);
+    REGISTER_CSV_BFIELD_WRITER_BINDING("RzGridless", RZ, false);
   }
 }
 }  // namespace Acts::Python

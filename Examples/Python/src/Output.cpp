@@ -631,27 +631,6 @@ void addOutput(Context& ctx) {
     ACTS_PYTHON_STRUCT_END();
   }
 
-#define REGISTER_CSV_BFIELD_WRITER_BINDING(suffix, coordinate, grid)      \
-  {                                                                       \
-    using Config = Writer::Config<                                        \
-        ActsExamples::CsvBFieldWriter::CoordinateType::coordinate, grid>; \
-    w.def_static(                                                         \
-        "run" suffix,                                                     \
-        [](const Config& config, Acts::Logging::Level level) {            \
-          Writer::run(config, level);                                     \
-        },                                                                \
-        py::arg("config"), py::arg("level"));                             \
-    auto c = py::class_<Config>(w, "Config" suffix).def(py::init<>());    \
-    ACTS_PYTHON_STRUCT_BEGIN(c, Config);                                  \
-    ACTS_PYTHON_MEMBER(fileName);                                         \
-    ACTS_PYTHON_MEMBER(bField);                                           \
-    ACTS_PYTHON_MEMBER(range);                                            \
-    ACTS_PYTHON_MEMBER(bins);                                             \
-    ACTS_PYTHON_STRUCT_END();                                             \
-  }                                                                       \
-  do {                                                                    \
-  } while (0)
-
   {
     using Writer = ActsExamples::CsvBFieldWriter;
 

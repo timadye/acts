@@ -27,6 +27,7 @@ def runITk(
     outputObj=True,
     outputCsv=False,
     outputJson=False,
+    outputSvg=False,
 ):
 
     for ievt in range(events):
@@ -57,6 +58,16 @@ def runITk(
             writer = ObjTrackingGeometryWriter(
                 level=acts.logging.INFO,
                 outputDir=str(obj_dir),
+            )
+            writer.write(context, trackingGeometry)
+
+        if outputSvg:
+            from acts.examples import SvgTrackingGeometryWriter
+            svg_dir = outputDir / "svg"
+            svg_dir.mkdir(exist_ok=True)
+            writer = SvgTrackingGeometryWriter(
+                level=acts.logging.INFO,
+                outputDir=str(svg_dir),
             )
             writer.write(context, trackingGeometry)
 
@@ -113,6 +124,9 @@ if "__main__" == __name__:
         "--output-obj", action="store_true", help="Write geometry in OBJ format."
     )
     p.add_argument(
+        "--output-svg", action="store_true", help="Write geometry in SVG format."
+    )
+    p.add_argument(
         "--output-json",
         action="store_true",
         help="Write geometry and material in JSON format.",
@@ -140,4 +154,5 @@ if "__main__" == __name__:
         outputCsv=args.output_csv,
         outputObj=args.output_obj,
         outputJson=args.output_json,
+        outputSvg=args.output_svg,
     )

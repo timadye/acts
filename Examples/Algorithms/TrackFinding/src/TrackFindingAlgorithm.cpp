@@ -48,6 +48,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <set>
 #include <stdexcept>
 #include <system_error>
 #include <unordered_map>
@@ -176,15 +177,12 @@ void visitSeedIdentifiers(const TrackProxy& track, Visitor visitor) {
 
 class BranchStopper {
  public:
-  using Config =
-      std::optional<std::variant<Acts::TrackSelector::Config,
-                                 Acts::TrackSelector::EtaBinnedConfig>>;
   using BranchStopperResult =
       Acts::CombinatorialKalmanFilterBranchStopperResult;
 
   struct BrachState {
-    int nPixelHoles = 0;
-    int nShortStripHoles = 0;
+    std::size_t nPixelHoles = 0;
+    std::size_t nStripHoles = 0;
   };
 
   static constexpr Acts::ProxyAccessor<BrachState> branchStateAccessor =
@@ -192,13 +190,14 @@ class BranchStopper {
 
   mutable std::atomic<std::size_t> m_nStoppedBranches{0};
 
-  explicit BranchStopper(const Config& config) : m_config(config) {}
+  explicit BranchStopper(const TrackFindingAlgorithm::Config& config)
+      : m_cfg(config) {}
 
   BranchStopperResult operator()(
       const Acts::CombinatorialKalmanFilterTipState& tipState,
       const TrackContainer::TrackProxy& track,
       const TrackContainer::TrackStateProxy& trackState) const {
-    if (!m_config.has_value()) {
+    if (!m_cfg.trackSelectorCfg.has_value()) {
       return BranchStopperResult::Continue;
     }
 
@@ -214,31 +213,38 @@ class BranchStopper {
             return config.hasCuts(eta) ? &config.getCuts(eta) : nullptr;
           }
         },
-        *m_config);
+        *m_cfg.trackSelectorCfg);
 
     if (singleConfig == nullptr) {
       ++m_nStoppedBranches;
       return BranchStopperResult::StopAndDrop;
     }
 
-    auto& branchState = branchStateAccessor(track);
-    if (trackState.typeFlags().test(Acts::TrackStateFlag::HoleFlag)) {
-      if (trackState.referenceSurface().geometryId().volume() == 17) {
-        ++branchState.nPixelHoles;
-      } else if (trackState.referenceSurface().geometryId().volume() == 24) {
-        ++branchState.nShortStripHoles;
+    bool tooManyHolesPS = false;
+    if (!(m_cfg.pixelVolumes.empty() && m_cfg.stripVolumes.empty()) &&
+        !(m_cfg.maxPixelHoles == std::numeric_limits<std::size_t>::max() &&
+          m_cfg.maxStripHoles == std::numeric_limits<std::size_t>::max())) {
+      auto& branchState = branchStateAccessor(track);
+      // count both holes and outliers as holes for pixel/strip counts
+      if (trackState.typeFlags().test(Acts::TrackStateFlag::HoleFlag) ||
+          trackState.typeFlags().test(Acts::TrackStateFlag::OutlierFlag)) {
+        if (m_cfg.pixelVolumes.count(
+                trackState.referenceSurface().geometryId().volume()) >= 1) {
+          ++branchState.nPixelHoles;
+        } else if (m_cfg.stripVolumes.count(
+                       trackState.referenceSurface().geometryId().volume()) >=
+                   1) {
+          ++branchState.nStripHoles;
+        }
       }
-    }
-    if (branchState.nPixelHoles > 1) {
-      return BranchStopperResult::StopAndDrop;
-    }
-    if (branchState.nShortStripHoles > 1) {
-      return BranchStopperResult::StopAndDrop;
+      tooManyHolesPS = branchState.nPixelHoles > m_cfg.maxPixelHoles ||
+                       branchState.nStripHoles > m_cfg.maxStripHoles;
     }
 
     bool enoughMeasurements =
         tipState.nMeasurements >= singleConfig->minMeasurements;
-    bool tooManyHoles = tipState.nHoles > singleConfig->maxHoles;
+    bool tooManyHoles =
+        tipState.nHoles > singleConfig->maxHoles || tooManyHolesPS;
     bool tooManyOutliers = tipState.nOutliers > singleConfig->maxOutliers;
 
     if (tooManyHoles || tooManyOutliers) {
@@ -251,7 +257,7 @@ class BranchStopper {
   }
 
  private:
-  Config m_config;
+  const TrackFindingAlgorithm::Config& m_cfg;
 };
 
 }  // namespace
@@ -327,7 +333,7 @@ ProcessCode TrackFindingAlgorithm::execute(const AlgorithmContext& ctx) const {
 
   using Extensions = Acts::CombinatorialKalmanFilterExtensions<TrackContainer>;
 
-  BranchStopper branchStopper(m_cfg.trackSelectorCfg);
+  BranchStopper branchStopper(m_cfg);
 
   Extensions extensions;
   extensions.calibrator.connect<&MeasurementCalibratorAdapter::calibrate>(
